@@ -1,9 +1,11 @@
+/// <reference types="Cypress" />
+
 describe('Hacker Stories', () => {
   beforeEach(() => {
-    cy.visit('/')
+    cy.searchQuery('React').as('getStories')
 
-    cy.assertLoadingIsShownAndHidden()
-    cy.contains('More').should('be.visible')
+    cy.visit('/')
+    cy.wait('@getStories')
   })
 
   it('shows the footer', () => {
@@ -21,11 +23,12 @@ describe('Hacker Stories', () => {
     it.skip('shows the right data for all rendered stories', () => {})
 
     it('shows 20 stories, then the next 20 after clicking "More"', () => {
+      cy.searchQuery('React', '1').as('getMore')
+
       cy.get('.item').should('have.length', 20)
 
       cy.contains('More').click()
-
-      cy.assertLoadingIsShownAndHidden()
+      cy.wait('@getMore')
 
       cy.get('.item').should('have.length', 40)
     })
@@ -67,16 +70,26 @@ describe('Hacker Stories', () => {
     const initialTerm = 'React'
     const newTerm = 'Cypress'
 
+    //cy.searchQuery('React').as('searchForTerm')
     beforeEach(() => {
+      cy.intercept({
+        method: 'GET',
+        pathname: '**/search',
+        query: {
+          query: `${newTerm}`,
+          page: '0'
+        }
+      }).as('searchTerm')
+
       cy.get('#search')
         .clear()
     })
 
-    it('types and hits ENTER', () => {
+    it.only('types and hits ENTER', () => {
       cy.get('#search')
         .type(`${newTerm}{enter}`)
 
-      cy.assertLoadingIsShownAndHidden()
+      cy.wait('@searchTerm')
 
       cy.get('.item').should('have.length', 20)
       cy.get('.item')
@@ -100,6 +113,15 @@ describe('Hacker Stories', () => {
         .should('contain', newTerm)
       cy.get(`button:contains(${initialTerm})`)
         .should('be.visible')
+    })
+
+    it('types and submits the form directly', () => {
+      cy.get('form input[type="text"]')
+        .should('be.visible')
+        .clear()
+        .type('cypress')
+      cy.get('form').submit()
+      // Assertion here
     })
 
     context('Last searches', () => {
@@ -131,8 +153,6 @@ describe('Hacker Stories', () => {
             .clear()
             .type(`${faker.random.word()}{enter}`)
         })
-
-        cy.assertLoadingIsShownAndHidden()
 
         cy.get('.last-searches button')
           .should('have.length', 5)
