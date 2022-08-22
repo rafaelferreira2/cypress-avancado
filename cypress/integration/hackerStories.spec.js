@@ -70,16 +70,8 @@ describe('Hacker Stories', () => {
     const initialTerm = 'React'
     const newTerm = 'Cypress'
 
-    //cy.searchQuery('React').as('searchForTerm')
     beforeEach(() => {
-      cy.intercept({
-        method: 'GET',
-        pathname: '**/search',
-        query: {
-          query: `${newTerm}`,
-          page: '0'
-        }
-      }).as('searchTerm')
+      cy.searchQuery(`${newTerm}`).as('searchTerm')
 
       cy.get('#search')
         .clear()
